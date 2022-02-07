@@ -20,7 +20,6 @@ package apt
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -49,22 +48,15 @@ func TestSearch(t *testing.T) {
 	require.NoError(t, err, "running Search command")
 	require.Empty(t, list, "Search command result")
 
-	list, err = Search("header")
+	list, err = Search("*")
 	require.NoError(t, err, "running Search command")
 	require.NotEmpty(t, list, "Search command result")
 }
 
 func TestListUpgradable(t *testing.T) {
 	list, err := ListUpgradable()
-	for _, p := range list {
-		fmt.Printf("%+v\n", p)
-	}
 	require.NoError(t, err, "running List command")
-}
-
-func TestCheckForUpdates(t *testing.T) {
-	out, err := CheckForUpdates()
-	require.NoError(t, err, "running CheckForUpdate command")
-	fmt.Printf(">>>\n%s\n<<<\n", string(out))
-	fmt.Println("ERR:", err)
+	for _, p := range list {
+		t.Logf("%+v\n", p)
+	}
 }

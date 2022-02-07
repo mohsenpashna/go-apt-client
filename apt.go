@@ -26,6 +26,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Package is a package available in the APT system
@@ -47,15 +49,16 @@ func List() ([]*Package, error) {
 // Search list packages available in the system that match the search
 // pattern
 func Search(pattern string) ([]*Package, error) {
-	cmd := exec.Command("dpkg-query", "-W", "-f=${Package}\t${Architecture}\t${db:Status-Status}\t${Version}\t${Installed-Size}\t${Binary:summary}\n", pattern)
+	executer = exec.Command("dpkg-query", "-W", "-f=${Package}\t${Architecture}\t${db:Status-Status}\t${Version}\t${Installed-Size}\t${Binary:summary}\n", pattern)
 
-	out, err := cmd.CombinedOutput()
+	out, err := executer.CombinedOutput()
 	if err != nil {
 		// Avoid returning an error if the list is empty
 		if bytes.Contains(out, []byte("no packages found matching")) {
 			return []*Package{}, nil
 		}
-		return nil, fmt.Errorf("running dpkg-query: %s - %s", err, out)
+		errMsg := fmt.Sprintf("running dpkg-query: %s", out)
+		return nil, errors.Wrap(err, errMsg)
 	}
 
 	return parseDpkgQueryOutput(out), nil
@@ -85,22 +88,24 @@ func parseDpkgQueryOutput(out []byte) []*Package {
 
 // CheckForUpdates runs an apt update to retrieve new packages available
 // from the repositories
-func CheckForUpdates() (output []byte, err error) {
-	cmd := exec.Command("apt-get", "update", "-q")
-	return cmd.CombinedOutput()
+func CheckForUpdates() error {
+	executer = exec.Command("apt-get", "update", "-q")
+	return executer.Run()
 }
 
 // ListUpgradable return all the upgradable packages and the version that
 // is going to be installed if an UpgradeAll is performed
 func ListUpgradable() ([]*Package, error) {
-	cmd := exec.Command("apt", "list", "--upgradable")
-	out, err := cmd.Output()
+	pkgs := []*Package{}
+
+	executer = exec.Command("apt", "list", "--upgradable")
+
+	out, err := executer.Output()
 	if err != nil {
-		return nil, fmt.Errorf("running apt list: %s", err)
+		return nil, errors.Wrap(err, "error running apt list")
 	}
 	re := regexp.MustCompile(`^([^ ]+) ([^ ]+) ([^ ]+)( \[upgradable from: [^\[\]]*\])?`)
 
-	res := []*Package{}
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
 		matches := re.FindAllStringSubmatch(scanner.Text(), -1)
@@ -113,63 +118,63 @@ func ListUpgradable() ([]*Package, error) {
 		//       -> "libgweather-common"
 		name := strings.Split(matches[0][1], "/")[0]
 
-		res = append(res, &Package{
+		pkgs = append(pkgs, &Package{
 			Name:         name,
 			Status:       "upgradable",
 			Version:      matches[0][2],
 			Architecture: matches[0][3],
 		})
 	}
-	return res, nil
+	return pkgs, nil
 }
 
 // Upgrade runs the upgrade for a set of packages
-func Upgrade(packs ...*Package) (output []byte, err error) {
+func Upgrade(packs ...*Package) (err error) {
 	args := []string{"upgrade", "-y"}
 	for _, pack := range packs {
 		if pack == nil || pack.Name == "" {
-			return nil, fmt.Errorf("apt.Upgrade: Invalid package with empty Name")
+			return errors.New("invalid package with empty name")
 		}
 		args = append(args, pack.Name)
 	}
-	cmd := exec.Command("apt-get", args...)
-	return cmd.CombinedOutput()
+	executer = exec.Command("apt-get", args...)
+	return executer.Run()
 }
 
 // UpgradeAll upgrade all upgradable packages
-func UpgradeAll() (output []byte, err error) {
-	cmd := exec.Command("apt-get", "upgrade", "-y")
-	return cmd.CombinedOutput()
+func UpgradeAll() (err error) {
+	executer = exec.Command("apt-get", "upgrade", "-y")
+	return executer.Run()
 }
 
 // DistUpgrade upgrades all upgradable packages, it may remove older versions to install newer ones.
-func DistUpgrade() (output []byte, err error) {
-	cmd := exec.Command("apt-get", "dist-upgrade", "-y")
-	return cmd.CombinedOutput()
+func DistUpgrade() (err error) {
+	executer = exec.Command("apt-get", "dist-upgrade", "-y")
+	return executer.Run()
 }
 
 // Remove removes a set of packages
-func Remove(packs ...*Package) (output []byte, err error) {
+func Remove(packs ...*Package) error {
 	args := []string{"remove", "-y"}
 	for _, pack := range packs {
 		if pack == nil || pack.Name == "" {
-			return nil, fmt.Errorf("apt.Remove: Invalid package with empty Name")
+			return errors.New("invalid package with empty name")
 		}
 		args = append(args, pack.Name)
 	}
-	cmd := exec.Command("apt-get", args...)
-	return cmd.CombinedOutput()
+	executer = exec.Command("apt-get", args...)
+	return executer.Run()
 }
 
 // Install installs a set of packages
-func Install(packs ...*Package) (output []byte, err error) {
+func Install(packs ...*Package) error {
 	args := []string{"install", "-y"}
 	for _, pack := range packs {
 		if pack == nil || pack.Name == "" {
-			return nil, fmt.Errorf("apt.Install: Invalid package with empty Name")
+			return errors.New("invalid package with empty name")
 		}
 		args = append(args, pack.Name)
 	}
-	cmd := exec.Command("apt-get", args...)
-	return cmd.CombinedOutput()
+	executer = exec.Command("apt-get", args...)
+	return executer.Run()
 }
