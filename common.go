@@ -10,6 +10,12 @@ type AptManager struct {
 	executer *exec.Cmd
 }
 
+// NewAptManager returns a new apt manager
+func NewAptManager() AptManager {
+	cmd := &exec.Cmd{}
+	return AptManager{executer: cmd}
+}
+
 // SetStdout sets stdout writer
 func (am *AptManager) SetStdout(w io.Writer) {
 	am.executer.Stdout = w
