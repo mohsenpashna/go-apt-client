@@ -44,17 +44,19 @@ func TestList(t *testing.T) {
 }
 
 func TestSearch(t *testing.T) {
-	list, err := Search("nonexisting")
+	am := AptManager{}
+	list, err := am.Search("nonexisting")
 	require.NoError(t, err, "running Search command")
 	require.Empty(t, list, "Search command result")
 
-	list, err = Search("*")
+	list, err = am.Search("*")
 	require.NoError(t, err, "running Search command")
 	require.NotEmpty(t, list, "Search command result")
 }
 
 func TestListUpgradable(t *testing.T) {
-	list, err := ListUpgradable()
+	am := AptManager{}
+	list, err := am.ListUpgradable()
 	require.NoError(t, err, "running List command")
 	for _, p := range list {
 		t.Logf("%+v\n", p)

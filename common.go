@@ -5,12 +5,17 @@ import (
 	"os/exec"
 )
 
-var executer *exec.Cmd
-
-func SetStdout(w io.Writer) {
-	executer.Stdout = w
+// AptManager creates an apt manager
+type AptManager struct {
+	executer *exec.Cmd
 }
 
-func SetStderr(w io.Writer) {
-	executer.Stderr = w
+// SetStdout sets stdout writer
+func (am *AptManager) SetStdout(w io.Writer) {
+	am.executer.Stdout = w
+}
+
+// SetStderr sets stderr writer
+func (am *AptManager) SetStderr(w io.Writer) {
+	am.executer.Stderr = w
 }

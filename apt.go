@@ -42,16 +42,16 @@ type Package struct {
 
 // List returns a list of packages available in the system with their
 // respective status.
-func List() ([]*Package, error) {
-	return Search("*")
+func (am *AptManager) List() ([]*Package, error) {
+	return am.Search("*")
 }
 
 // Search list packages available in the system that match the search
 // pattern
-func Search(pattern string) ([]*Package, error) {
-	executer = exec.Command("dpkg-query", "-W", "-f=${Package}\t${Architecture}\t${db:Status-Status}\t${Version}\t${Installed-Size}\t${Binary:summary}\n", pattern)
+func (am *AptManager) Search(pattern string) ([]*Package, error) {
+	am.executer = exec.Command("dpkg-query", "-W", "-f=${Package}\t${Architecture}\t${db:Status-Status}\t${Version}\t${Installed-Size}\t${Binary:summary}\n", pattern)
 
-	out, err := executer.CombinedOutput()
+	out, err := am.executer.CombinedOutput()
 	if err != nil {
 		// Avoid returning an error if the list is empty
 		if bytes.Contains(out, []byte("no packages found matching")) {
@@ -88,19 +88,19 @@ func parseDpkgQueryOutput(out []byte) []*Package {
 
 // CheckForUpdates runs an apt update to retrieve new packages available
 // from the repositories
-func CheckForUpdates() error {
-	executer = exec.Command("apt-get", "update", "-q")
-	return executer.Run()
+func (am *AptManager) CheckForUpdates() error {
+	am.executer = exec.Command("apt-get", "update", "-q")
+	return am.executer.Run()
 }
 
 // ListUpgradable return all the upgradable packages and the version that
 // is going to be installed if an UpgradeAll is performed
-func ListUpgradable() ([]*Package, error) {
+func (am *AptManager) ListUpgradable() ([]*Package, error) {
 	pkgs := []*Package{}
 
-	executer = exec.Command("apt", "list", "--upgradable")
+	am.executer = exec.Command("apt", "list", "--upgradable")
 
-	out, err := executer.Output()
+	out, err := am.executer.Output()
 	if err != nil {
 		return nil, errors.Wrap(err, "error running apt list")
 	}
@@ -129,7 +129,7 @@ func ListUpgradable() ([]*Package, error) {
 }
 
 // Upgrade runs the upgrade for a set of packages
-func Upgrade(packs ...*Package) (err error) {
+func (am *AptManager) Upgrade(packs ...*Package) (err error) {
 	args := []string{"upgrade", "-y"}
 	for _, pack := range packs {
 		if pack == nil || pack.Name == "" {
@@ -137,24 +137,24 @@ func Upgrade(packs ...*Package) (err error) {
 		}
 		args = append(args, pack.Name)
 	}
-	executer = exec.Command("apt-get", args...)
-	return executer.Run()
+	am.executer = exec.Command("apt-get", args...)
+	return am.executer.Run()
 }
 
 // UpgradeAll upgrade all upgradable packages
-func UpgradeAll() (err error) {
-	executer = exec.Command("apt-get", "upgrade", "-y")
-	return executer.Run()
+func (am *AptManager) UpgradeAll() (err error) {
+	am.executer = exec.Command("apt-get", "upgrade", "-y")
+	return am.executer.Run()
 }
 
 // DistUpgrade upgrades all upgradable packages, it may remove older versions to install newer ones.
-func DistUpgrade() (err error) {
-	executer = exec.Command("apt-get", "dist-upgrade", "-y")
-	return executer.Run()
+func (am *AptManager) DistUpgrade() (err error) {
+	am.executer = exec.Command("apt-get", "dist-upgrade", "-y")
+	return am.executer.Run()
 }
 
 // Remove removes a set of packages
-func Remove(packs ...*Package) error {
+func (am *AptManager) Remove(packs ...*Package) error {
 	args := []string{"remove", "-y"}
 	for _, pack := range packs {
 		if pack == nil || pack.Name == "" {
@@ -162,12 +162,12 @@ func Remove(packs ...*Package) error {
 		}
 		args = append(args, pack.Name)
 	}
-	executer = exec.Command("apt-get", args...)
-	return executer.Run()
+	am.executer = exec.Command("apt-get", args...)
+	return am.executer.Run()
 }
 
 // Install installs a set of packages
-func Install(packs ...*Package) error {
+func (am *AptManager) Install(packs ...*Package) error {
 	args := []string{"install", "-y"}
 	for _, pack := range packs {
 		if pack == nil || pack.Name == "" {
@@ -175,6 +175,6 @@ func Install(packs ...*Package) error {
 		}
 		args = append(args, pack.Name)
 	}
-	executer = exec.Command("apt-get", args...)
-	return executer.Run()
+	am.executer = exec.Command("apt-get", args...)
+	return am.executer.Run()
 }
