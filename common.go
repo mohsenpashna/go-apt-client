@@ -11,9 +11,9 @@ type AptManager struct {
 }
 
 // NewAptManager returns a new apt manager
-func NewAptManager() AptManager {
+func NewAptManager() *AptManager {
 	cmd := &exec.Cmd{}
-	return AptManager{executer: cmd}
+	return &AptManager{executer: cmd}
 }
 
 // SetStdout sets stdout writer
