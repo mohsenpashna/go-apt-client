@@ -90,7 +90,7 @@ func parseDpkgQueryOutput(out []byte) []*Package {
 // from the repositories
 func (am *AptManager) CheckForUpdates() error {
 	am.executer = exec.Command("apt-get", "update", "-q")
-	return am.executer.Run()
+	return am.executer.Wait()
 }
 
 // ListUpgradable return all the upgradable packages and the version that
@@ -138,19 +138,19 @@ func (am *AptManager) Upgrade(packs ...*Package) (err error) {
 		args = append(args, pack.Name)
 	}
 	am.executer = exec.Command("apt-get", args...)
-	return am.executer.Run()
+	return am.executer.Wait()
 }
 
 // UpgradeAll upgrade all upgradable packages
 func (am *AptManager) UpgradeAll() (err error) {
 	am.executer = exec.Command("apt-get", "upgrade", "-y")
-	return am.executer.Run()
+	return am.executer.Wait()
 }
 
 // DistUpgrade upgrades all upgradable packages, it may remove older versions to install newer ones.
 func (am *AptManager) DistUpgrade() (err error) {
 	am.executer = exec.Command("apt-get", "dist-upgrade", "-y")
-	return am.executer.Run()
+	return am.executer.Wait()
 }
 
 // Remove removes a set of packages
@@ -163,7 +163,7 @@ func (am *AptManager) Remove(packs ...*Package) error {
 		args = append(args, pack.Name)
 	}
 	am.executer = exec.Command("apt-get", args...)
-	return am.executer.Run()
+	return am.executer.Wait()
 }
 
 // Install installs a set of packages
@@ -176,5 +176,5 @@ func (am *AptManager) Install(packs ...*Package) error {
 		args = append(args, pack.Name)
 	}
 	am.executer = exec.Command("apt-get", args...)
-	return am.executer.Run()
+	return am.executer.Wait()
 }
